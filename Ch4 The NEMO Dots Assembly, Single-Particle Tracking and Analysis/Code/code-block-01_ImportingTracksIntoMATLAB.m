@@ -13,7 +13,13 @@ tracks
 % You should see something like this:
 % tracks =
 % 22x1 cell array
-% 112x3 double
-% 268x3 double
-% 159x3 double
-% ...
+%   112x3 double
+%   268x3 double
+%   159x3 double
+%   ...
+
+% Plot a track:
+tracks1 = tracks{1};
+x = tracks1(:,2);
+y = tracks1(:,3);
+plot(x,y, 'ko-', 'MarkerFaceColor', 'w'), axis equal, box off
