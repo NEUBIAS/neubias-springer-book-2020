@@ -1,0 +1,20 @@
+//Activate objects’ map
+//Get and store the number of objects
+//Create an output array, properly dimensioned
+
+//For each object
+	//Activate the objects’ map 
+	//Set the threshold to select the current object
+	//Empty the ROI Manager
+	//Run analyze particles, adding the outlines to the ROI Manager
+	//Create a variable to store the volume and initialise it to zero
+
+	//For each outline
+		//Activate the image on which to measure
+		//Select the ROI
+		//Measure the volume
+		//Add the volume to the variable
+	//End for each outline
+	//Push the measure to the output array
+//End for each object
+//Return the output array

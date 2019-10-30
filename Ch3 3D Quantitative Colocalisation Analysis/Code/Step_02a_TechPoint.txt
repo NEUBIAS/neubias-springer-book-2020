@@ -1,0 +1,3 @@
+waitForUser; //This is a no argument version of waitForUser that displays "Click OK to continue" in the dialog box. 
+waitForUser(string); //Halts the macro and displays string in a dialog box. The macro proceeds when the user clicks "OK". 
+waitForUser(title, message); //This is a two argument version of waitForUser, where title is the dialog box title and message is the text dispayed in the dialog. 

@@ -1,0 +1,9 @@
+//Isolate the objects and get the caracteristics on each image
+function isolateObjects(minSize, image){
+	selectWindow(image);
+	run("Threshold...");
+	waitForUser("Adjust the threshold then press Ok");
+	getThreshold(lower, upper);
+	run("Set 3D Measurements", "dots_size=5 font_size=10 redirect_to=none");
+	run("3D object counter...", "threshold="+lower+" slice=5 min.=10 max.=100000 objects");
+}

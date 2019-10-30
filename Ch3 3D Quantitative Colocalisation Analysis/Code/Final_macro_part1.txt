@@ -1,0 +1,164 @@
+//--------------------------------------
+parameters=GUI();
+
+normaliseNames();
+
+isolateObjects(parameters[0], "Channel1");
+isolateObjects(parameters[1], "Channel2");
+
+getCommonParts();
+
+objectsVolume1=getValues("Tagged_map_Channel1", "Mask_Channel1");
+commonVolume1=getValues("Tagged_map_Channel1", "Common_volumes");
+
+objectsVolume2=getValues("Tagged_map_Channel2", "Mask_Channel2");
+commonVolume2=getValues("Tagged_map_Channel2", "Common_volumes");
+
+generateOutputs(objectsVolume1, commonVolume1, "Tagged_map_Channel1");
+IJ.renameResults("Volume_Colocalisation_Channel1");
+selectWindow("Coloc_Map");
+rename("Volume_Colocalisation_Channel1");
+
+generateOutputs(objectsVolume2, commonVolume2, "Tagged_map_Channel2");
+IJ.renameResults("Volume_Colocalisation_Channel2");
+selectWindow("Coloc_Map");
+rename("Volume_Colocalisation_Channel2");
+//--------------------------------------
+
+//Display the graphical user interface
+function GUI(){
+	Dialog.create("Colocalisation");
+	Dialog.addNumber("Minimum size of objects on channel1 (in voxels)", 10);
+	Dialog.addNumber("Minimum size of objects on channel2 (in voxels)", 10);
+	Dialog.show();
+
+	out=newArray(2);
+	out[0]=Dialog.getNumber();
+	out[1]=Dialog.getNumber();
+	
+	return out;
+}
+
+
+//Split the channels and rename them in a normalised way
+function normaliseNames(){
+	ori=getTitle();
+	run("Split Channels");
+	selectWindow("C1-"+ori);
+	rename("Channel1");
+	selectWindow("C2-"+ori);
+	rename("Channel2");
+}
+
+//Isolate the objects and get the caracteristics on each image
+function isolateObjects(minSize, image){
+	selectWindow(image);
+	run("Threshold...");
+	waitForUser("Adjust the threshold then press Ok");
+	getThreshold(lower, upper);
+	run("3D OC Options", "  dots_size=5 font_size=10 redirect_to=none");
+	run("3D Objects Counter", "threshold="+lower+" slice=1 min.="+minSize+" max.=100000 objects");
+	rename("Tagged_map_"+image);
+}
+
+//Generate an image of the overlapped parts from channel1 and 2
+function getCommonParts(){
+	maskFromObjects("Channel1"); //Generate the mask for channel 1
+	maskFromObjects("Channel2"); //Generate the mask for channel 2
+
+	//Combine the two masks
+	imageCalculator("AND create stack", "Mask_Channel1","Mask_Channel2");
+	rename("Common_volumes");
+}
+
+//Generate a mask from objects map
+function maskFromObjects(image){
+	selectWindow("Tagged_map_"+image);
+	run("Duplicate...", "title=Mask_"+image+" duplicate");
+	setThreshold(1, 65535);
+	run("Convert to Mask", "method=Default background=Dark");
+	run("Divide...", "value=255 stack");
+	resetMinAndMax();
+}
+
+//Retrieve volumes object per object
+function getValues(objectsMap, imageToQuantify){
+	//Activate objects’ map
+	selectWindow(objectsMap);
+
+	//Get and store the number of objects
+	getStatistics(area, mean, min, nObjects, std, histogram);
+
+	//Create an output array, properly dimensioned
+	measures=newArray(nObjects);
+
+	//For each object
+	for(i=1; i<=nObjects; i++){
+		//Activate the objects’ map 
+		selectWindow(objectsMap);
+
+		//Set the threshold to select the current object
+		setThreshold(i, i);
+
+		//Empty the ROI Manager
+		roiManager("Reset");
+
+		//Run analyze particles, adding the outlines to the ROI Manager
+		run("Analyze Particles...", "add stack");
+
+		//Create a variable to store the volume and initialise it to zero
+		singleMeasure=0;
+
+		//For each outline
+		for(j=0; j<roiManager("Count"); j++){
+			//Activate the image on which to measure
+			selectWindow(imageToQuantify);
+
+			//Select the ROI
+			roiManager("Select", j);
+
+			//Measure the volume
+			getStatistics(area, mean, min, max, std, histogram);
+
+			//Add the volume to the variable
+			singleMeasure+=area*mean;
+		}
+		//End for each outline
+	
+		//Push the measure to the output array
+		measures[i-1]=singleMeasure;
+	
+	//End for each object
+	}
+	
+	//Return the output array
+	return measures;
+}
+
+//Generates two types of outputs: a results table and 2 co-localisation maps
+function generateOutputs(objectsMeasures, commonMeasures, objectsMap){
+	//Empties any pre-existing results table
+	run("Clear Results");
+
+	//Duplicate the objects map
+	selectWindow(objectsMap);
+	run("Select None"); //Needed to remove any ROI from the image
+	run("Duplicate...", "title=Coloc_Map duplicate");
+	run("32-bit"); //Needed to accomodate decimal intensities
+
+	for(i=0; i<objectsMeasures.length; i++){
+		//Calculate the ratio
+		ratio=commonMeasures[i]/objectsMeasures[i];
+
+		//Fill the results table with data
+		setResult("Label", nResults, "Object_"+(i+1));
+		setResult("Full object", nResults-1, objectsMeasures[i]);
+		setResult("Common part", nResults-1, commonMeasures[i]);
+		setResult("Ratio", nResults-1, ratio);
+
+		//Replace each object's tag by the corresponding colocalisation ratio
+		selectWindow("Coloc_Map");
+		run("Macro...", "code=[if(v=="+(i+1)+") v="+ratio+"] stack");
+	}
+	resetMinAndMax();
+}

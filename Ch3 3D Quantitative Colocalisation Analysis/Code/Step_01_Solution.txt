@@ -1,0 +1,13 @@
+//--------------------------------------
+normaliseNames();
+//--------------------------------------
+
+//Split the channels and rename them in a normalised way
+function normaliseNames(){
+	ori=getTitle();
+	run("Split Channels");
+	selectWindow("C1-"+ori);
+	rename("Channel1");
+	selectWindow("C2-"+ori);
+	rename("Channel2");
+}

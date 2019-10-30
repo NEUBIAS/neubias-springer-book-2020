@@ -1,0 +1,49 @@
+//--------------------------------------
+normaliseNames();
+
+isolateObjects(10, "Channel1");
+isolateObjects(10, "Channel2");
+
+getCommonParts();
+//--------------------------------------
+
+//Split the channels and rename them in a normalised way
+function normaliseNames(){
+	ori=getTitle();
+	run("Split Channels");
+	selectWindow("C1-"+ori);
+	rename("Channel1");
+	selectWindow("C2-"+ori);
+	rename("Channel2");
+}
+
+//Isolate the objects and get the caracteristics on each image
+function isolateObjects(minSize, image){
+	selectWindow(image);
+	run("Threshold...");
+	waitForUser("Adjust the threshold then press Ok");
+	getThreshold(lower, upper);
+	run("3D OC Options", "  dots_size=5 font_size=10 redirect_to=none");
+	run("3D Objects Counter", "threshold="+lower+" slice=1 min.="+minSize+" max.=100000 objects");
+	rename("Tagged_map_"+image);
+}
+
+//Generate an image of the overlapped parts from channel1 and 2
+function getCommonParts(){
+	maskFromObjects("Channel1"); //Generate the mask for channel 1
+	maskFromObjects("Channel2"); //Generate the mask for channel 2
+
+	//Combine the two masks
+	imageCalculator("AND create stack", "Mask_Channel1","Mask_Channel2");
+	rename("Common_volumes");
+}
+
+//Generate a mask from objects map
+function maskFromObjects(image){
+	selectWindow("Tagged_map_"+image);
+	run("Duplicate...", "title=Mask_"+image+" duplicate");
+	setThreshold(1, 65535);
+	run("Convert to Mask", "method=Default background=Dark");
+	run("Divide...", "value=255 stack");
+	resetMinAndMax();
+}

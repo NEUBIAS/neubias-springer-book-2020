@@ -1,0 +1,28 @@
+//--------------------------------------
+normaliseNames();
+
+isolateObjects(10, "Channel1");
+isolateObjects(10, "Channel2");
+
+//--------------------------------------
+
+//Split the channels and rename them in a normalised way
+function normaliseNames(){
+	ori=getTitle();
+	run("Split Channels");
+	selectWindow("C1-"+ori);
+	rename("Channel1");
+	selectWindow("C2-"+ori);
+	rename("Channel2");
+}
+
+//Isolate the objects and get the caracteristics on each image
+function isolateObjects(minSize, image){
+	selectWindow(image);
+	run("Threshold...");
+	waitForUser("Adjust the threshold then press Ok");
+	getThreshold(lower, upper);
+	run("3D OC Options", "  dots_size=5 font_size=10 redirect_to=none");
+	run("3D Objects Counter", "threshold="+lower+" slice=1 min.="+minSize+" max.=100000 objects");
+	rename("Tagged_map_"+image);
+}
