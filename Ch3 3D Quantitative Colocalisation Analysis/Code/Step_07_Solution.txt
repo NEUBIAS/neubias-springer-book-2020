@@ -98,7 +98,7 @@ function getValues(objectsMap, imageToQuantify){
 	selectWindow(objectsMap);
 
 	//Get and store the number of objects
-	getStatistics(area, mean, min, nObjects, std, histogram);
+	Stack.getStatistics(area, mean, min, nObjects, std);
 
 	//Create an output array, properly dimensioned
 	measures=newArray(nObjects);
